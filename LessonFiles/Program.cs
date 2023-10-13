@@ -1,6 +1,4 @@
-﻿using System.Text.Json;
-
-namespace LessonFiles
+﻿namespace LessonFiles
 {
     internal class Program
     {

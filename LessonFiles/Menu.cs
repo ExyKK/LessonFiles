@@ -1,18 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace LessonFiles
+﻿namespace LessonFiles
 {
     internal class Menu
     {
         private readonly string[] menuItems = new string[] { "Информация о дисках", "Работа с файлами", "Архивирование", "Выход" };
         private readonly string[] menuFileItems = new string[] { "Работа с .txt файлом", "Работа с .json файлом", "Работа с .xml файлом", "Назад" };
         private readonly string[] menuFileOptions = new string[] { "Записать", "Прочитать", "Удалить", "Назад" };
+        private readonly string[] menuArchiveOptions = new string[] { "Сжать файл", "Разархивировать", "Удалить файл и архив", "Назад" };
 
         public void Run()
         {
@@ -46,16 +39,18 @@ namespace LessonFiles
                                         switch (Console.ReadKey(true).Key)
                                         {
                                             case ConsoleKey.D1:
-                                                WritingTxt(); // Запись                                                
+                                                ClearAndWrite("Запись\n\nВведите полный путь до файла:"); // Запись
+                                                Writing(new FileManipulator(Console.ReadLine()));                                                
                                                 break;
 
                                             case ConsoleKey.D2:
                                                 ClearAndWrite("Чтение\n\nВведите полный путь до файла:"); // Чтение
-                                                Reading(new FileManipulator(GetPath()));
+                                                Reading(new FileManipulator(Console.ReadLine()));
                                                 break;
 
                                             case ConsoleKey.D3:
-                                                Deletion(); // Удаление
+                                                ClearAndWrite("Удаление\n\nВведите полный путь до файла:"); // Удаление
+                                                Deletion(new FileManipulator(Console.ReadLine()));
                                                 break;
 
                                             case ConsoleKey.D4:
@@ -75,16 +70,17 @@ namespace LessonFiles
                                         {
                                             case ConsoleKey.D1:
                                                 ClearAndWrite("Запись\n\nВведите полный путь до файла:"); // Запись
-                                                WritingStructured(new JsonManipulator(GetPath()));
+                                                Writing(new JsonManipulator(Console.ReadLine()));
                                                 break;
 
                                             case ConsoleKey.D2:
                                                 ClearAndWrite("Чтение\n\nВведите полный путь до файла:"); // Чтение
-                                                Reading(new JsonManipulator(GetPath()));
+                                                Reading(new JsonManipulator(Console.ReadLine()));
                                                 break;
 
                                             case ConsoleKey.D3:
-                                                Deletion(); // Удаление                                             
+                                                ClearAndWrite("Удаление\n\nВведите полный путь до файла:"); // Удаление
+                                                Deletion(new JsonManipulator(Console.ReadLine()));                                           
                                                 break;
 
                                             case ConsoleKey.D4:
@@ -104,16 +100,17 @@ namespace LessonFiles
                                         {
                                             case ConsoleKey.D1:
                                                 ClearAndWrite("Запись\n\nВведите полный путь до файла:"); // Запись
-                                                WritingStructured(new XmlManipulator(GetPath()));
+                                                Writing(new XmlManipulator(Console.ReadLine()));
                                                 break;
 
                                             case ConsoleKey.D2:
                                                 ClearAndWrite("Чтение\n\nВведите полный путь до файла:"); // Чтение
-                                                Reading(new XmlManipulator(GetPath()));
+                                                Reading(new XmlManipulator(Console.ReadLine()));
                                                 break;
 
                                             case ConsoleKey.D3:
-                                                Deletion(); // Удаление
+                                                ClearAndWrite("Удаление\n\nВведите полный путь до файла:"); // Удаление
+                                                Deletion(new XmlManipulator(Console.ReadLine()));
                                                 break;
 
                                             case ConsoleKey.D4:
@@ -131,28 +128,31 @@ namespace LessonFiles
                         break;
 
                     case ConsoleKey.D3:
+
                         ClearAndWrite(menuItems[2]); // Архивирование
-                        ShowMenuItems(menuFileOptions);
+                        ShowMenuItems(menuArchiveOptions);
                         bool exitArchive = false;
                         while (!exitArchive)
                         {
                             switch (Console.ReadKey(true).Key)
                             {
                                 case ConsoleKey.D1:
-                                    Compress(); // Сжатие
+                                    ClearAndWrite("Сжатие\n\nВведите полный путь до файла:"); // Сжатие
+                                    Compression(new Archiver(Console.ReadLine()));
                                     break;
 
                                 case ConsoleKey.D2:
-                                    ClearAndWrite("Разархивация\n\nВведите полный путь до файла:"); // Разархивация
-                                    Reading(new Archiver(GetPath()));
+                                    ClearAndWrite("Разархивация\n\nВведите полный путь до архива:"); // Разархивация
+                                    Reading(new Archiver(Console.ReadLine()));
                                     break;
 
                                 case ConsoleKey.D3:
-                                    Deletion(); // Удаление
+                                    ClearAndWrite("Удаление\n\nВведите полный путь до файла:"); // Удаление
+                                    Deletion(new Archiver(Console.ReadLine()));
                                     break;
 
                                 case ConsoleKey.D4:
-                                    Exit(ref exitArchive, menuFileOptions[3], menuFileItems);
+                                    Exit(ref exitArchive, menuArchiveOptions[3], menuItems);
                                     break;
                             }
                         }
@@ -192,68 +192,46 @@ namespace LessonFiles
             exit = true;
         }
 
-        private string GetPath()
-        {
-            string? path = Console.ReadLine();
-            if (path == "")
-                throw new Exception();
-            return path;
-        }
-
-        private void WritingTxt()
-        {
-            ClearAndWrite("Запись\n\nВведите полный путь до файла:");                                           
+        private void Compression(Archiver archiver)
+        {            
             try
             {
-                string path = GetPath();
-                FileManipulator manipulator = new(path);
-                ClearAndWrite($"Запись в файл\n\n{path}");
-                manipulator.Write(Console.ReadLine());
-                ClearAndWrite("Запись успешна");
-                ShowMenuItems(menuFileOptions);
+                ClearAndWrite($"Архивирование\n\n{archiver.GetFilePath()}");
+                archiver.Write();
+                ShowMenuItems(menuArchiveOptions);
             }
             catch (Exception)
             {
                 ClearAndWrite("Проверьте корректнось введённого пути");
-                ShowMenuItems(menuFileOptions);
+                ShowMenuItems(menuArchiveOptions);
             }
         }
 
-        private void WritingStructured(StructuredManipulator manipulator)
-        {            
+        private void Writing(FileManipulator manipulator)
+        {
             try
             {
                 ClearAndWrite($"Запись в файл\n\n{manipulator.GetFilePath()}");
 
-                string[] input = new string[3];
-                Console.WriteLine($"Введите Id:");
-                input[0] = Console.ReadLine();
-                Console.WriteLine($"Введите Name:");
-                input[1] = Console.ReadLine();
-                Console.WriteLine($"Введите Description:");
-                input[2] = Console.ReadLine();
+                if (manipulator is JsonManipulator || manipulator is XmlManipulator)
+                {
+                    string[] input = new string[3];
+                    Console.WriteLine($"Введите Id:");
+                    input[0] = Console.ReadLine();
+                    Console.WriteLine($"Введите Name:");
+                    input[1] = Console.ReadLine();
+                    Console.WriteLine($"Введите Description:");
+                    input[2] = Console.ReadLine();
 
-                manipulator.Write(input);
+                    var structuredManipulator = (StructuredManipulator) manipulator;
+                    structuredManipulator.Write(input);
+                }
+                else
+                {
+                    manipulator.Write(Console.ReadLine());
+                }
+
                 ClearAndWrite("Запись успешна");
-                ShowMenuItems(menuFileOptions);
-            }
-            catch (Exception)
-            {
-                ClearAndWrite("Проверьте корректнось введённого пути");
-                ShowMenuItems(menuFileOptions);
-            }
-        }
-
-        private void Compress()
-        {
-            ClearAndWrite("Сжатие\n\nВведите полный путь до файла:");
-            try
-            {
-                string filePath = GetPath();
-                Archiver archiver = new(filePath);
-
-                ClearAndWrite($"Архивирование\n\n{filePath}");
-                archiver.Write();
                 ShowMenuItems(menuFileOptions);
             }
             catch (Exception)
@@ -269,29 +247,44 @@ namespace LessonFiles
             {
                 Console.WriteLine();
                 manipulator.Read();
-                ShowMenuItems(menuFileOptions);
+                if (manipulator.GetType() == typeof(Archiver))
+                    ShowMenuItems(menuArchiveOptions);
+                else
+                    ShowMenuItems(menuFileOptions);
             }
             catch (Exception)
             {
                 ClearAndWrite("Проверьте корректнось введённого пути");
-                ShowMenuItems(menuFileOptions);
+                if (manipulator.GetType() == typeof(Archiver))
+                    ShowMenuItems(menuArchiveOptions);
+                else
+                    ShowMenuItems(menuFileOptions);
             }
         }
 
-        private void Deletion()
-        {
-            ClearAndWrite("Удаление\n\nВведите полный путь до файла:");
+        private void Deletion(FileManipulator manipulator)
+        {            
             try
             {
-                Archiver manipulator = new(GetPath());
                 manipulator.Delete();
-                ClearAndWrite("Файл удалён");
-                ShowMenuItems(menuFileOptions);
+                if (manipulator.GetType() == typeof(Archiver))
+                {
+                    ClearAndWrite("Файл и архив удалены");
+                    ShowMenuItems(menuArchiveOptions);
+                }
+                else
+                {
+                    ClearAndWrite("Файл удалён");
+                    ShowMenuItems(menuFileOptions);
+                }
             }
             catch (Exception)
             {
                 ClearAndWrite("Проверьте корректнось введённого пути");
-                ShowMenuItems(menuFileOptions);
+                if (manipulator.GetType() == typeof(Archiver))
+                    ShowMenuItems(menuArchiveOptions);
+                else
+                    ShowMenuItems(menuFileOptions);
             }
         }
     }

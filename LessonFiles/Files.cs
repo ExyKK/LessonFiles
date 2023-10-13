@@ -1,7 +1,6 @@
 ﻿using System.IO.Compression;
 using System.Text.Json;
 using System.Xml;
-using System.Xml.Linq;
 
 namespace LessonFiles
 {
@@ -101,8 +100,8 @@ namespace LessonFiles
             if (!File.Exists(FilePath))
             {
                 File.Create(FilePath).Close();
-                XDocument xDocument = new();
-                xDocument.Add(new XElement("models"));
+                System.Xml.Linq.XDocument xDocument = new();
+                xDocument.Add(new System.Xml.Linq.XElement("models"));
                 xDocument.Save(FilePath);
             }
 
@@ -157,8 +156,8 @@ namespace LessonFiles
 
     internal class Archiver : FileManipulator
     {
-        private readonly string _compressedPath;
-        private readonly string _fileName;
+        private readonly string? _compressedPath;
+        private readonly string? _fileName;
 
         public Archiver(string filePath) : base(filePath) 
         {
@@ -175,7 +174,7 @@ namespace LessonFiles
                     using (GZipStream compressionStream = new(targetStream, CompressionMode.Compress))
                     {
                         sourceStream.CopyTo(compressionStream);
-                        Console.WriteLine($"Сжатие файла {FilePath} завершено\nИсходный размер: {sourceStream.Length}\nСжатый размер: {targetStream.Length}\n");
+                        Console.WriteLine($"Сжатие файла завершено\nСозданный архив: {_compressedPath}\n");
                     }
                 }
             }
@@ -183,18 +182,23 @@ namespace LessonFiles
 
         public override void Read() // Разархивация
         {
+            string restoredPath = Path.Combine(FileDir, _fileName + ".txt");
+
             using (FileStream sourceStream = new(_compressedPath, FileMode.OpenOrCreate))
-            {
-                string restoredPath = Path.Combine(FileDir, _fileName + ".txt");
+            {                
                 using (FileStream targetStream = File.Create(restoredPath))
                 {
                     using (GZipStream decompressionStream = new GZipStream(sourceStream, CompressionMode.Decompress))
                     {
-                        decompressionStream.CopyTo(targetStream);
-                        Console.WriteLine($"Восстановлен файл: {restoredPath}");
+                        decompressionStream.CopyTo(targetStream);                      
                     }
                 }
             }
+            FileInfo source = new(restoredPath);
+            FileInfo compressed = new(_compressedPath);
+            Console.WriteLine($"Восстановлен файл: {restoredPath}\n" +
+                              $"Исходный размер: {source.Length}\n" +
+                              $"Сжатый размер: {compressed.Length}\n");
         }
 
         public override void Delete()
