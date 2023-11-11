@@ -1,13 +1,15 @@
-﻿using System.IO.Compression;
+﻿using System;
+using System.IO.Compression;
 using System.Text.Json;
 using System.Xml;
+using System.Xml.Serialization;
 
 namespace LessonFiles
 {
     internal class FileManipulator
     {
         protected readonly string FilePath;
-        protected readonly string FileDir;
+        protected readonly string? FileDir;
 
         public FileManipulator(string path)
         {
@@ -100,39 +102,20 @@ namespace LessonFiles
             if (!File.Exists(FilePath))
             {
                 File.Create(FilePath).Close();
-                System.Xml.Linq.XDocument xDocument = new();
-                xDocument.Add(new System.Xml.Linq.XElement("models"));
-                xDocument.Save(FilePath);
             }
 
-            XmlDocument xDoc = new();
-            xDoc.Load(FilePath);
+            SampleModel xmlObject = new(int.Parse(input[0]), input[1], input[2]);
+            XmlSerializer xmlSerializer = new(typeof(SampleModel));
 
-            XmlElement? xRoot = xDoc.DocumentElement;
-
-            XmlElement modelElem = xDoc.CreateElement("model");
-            XmlAttribute idAttr = xDoc.CreateAttribute("id");
-            XmlElement nameElem = xDoc.CreateElement("name");
-            XmlElement descriptionElem = xDoc.CreateElement("description");
-
-            XmlText idText = xDoc.CreateTextNode(input[0]);
-            XmlText nameText = xDoc.CreateTextNode(input[1]);
-            XmlText descriptionText = xDoc.CreateTextNode(input[2]);
-
-            idAttr.AppendChild(idText);
-            nameElem.AppendChild(nameText);
-            descriptionElem.AppendChild(descriptionText);
-
-            modelElem.Attributes.Append(idAttr);
-            modelElem.AppendChild(nameElem);
-            modelElem.AppendChild(descriptionElem);
-
-            xRoot?.AppendChild(modelElem);
-            xDoc.Save(FilePath);
+            using (FileStream stream = new(FilePath, FileMode.OpenOrCreate))
+            {
+                xmlSerializer.Serialize(stream, xmlObject);
+            }
         }
 
         public override void Read()
         {
+            SampleModel xmlObj = new();
             XmlDocument xDoc = new();
             xDoc.Load(FilePath);
 
@@ -141,15 +124,15 @@ namespace LessonFiles
             {
                 foreach (XmlElement xnode in xRoot)
                 {
-                    XmlNode? attr = xnode.Attributes.GetNamedItem("id");
-                    Console.WriteLine($"{attr?.Name}: {attr?.Value}");
-
-                    foreach (XmlNode childnode in xnode.ChildNodes)
-                    {
-                        Console.WriteLine($"{childnode.Name}: {childnode.InnerText}");
-                    }
-                    Console.WriteLine();
+                    if (xnode.Name == "Id")
+                        xmlObj.Id = int.Parse(xnode.InnerText);
+                    if (xnode.Name == "Name")
+                        xmlObj.Name = xnode.InnerText;
+                    if (xnode.Name == "Description")
+                        xmlObj.Description = xnode.InnerText;
                 }
+
+                Console.WriteLine($"Id: {xmlObj.Id}\nName: {xmlObj.Name}\nDescription: {xmlObj.Description}\n");
             }
         }
     }
@@ -161,8 +144,10 @@ namespace LessonFiles
 
         public Archiver(string filePath) : base(filePath) 
         {
-            _fileName = Path.GetFileNameWithoutExtension(FilePath);
-            _compressedPath = Path.Combine(FileDir, _fileName + ".gz");
+            if (!(FilePath == ""))
+                _fileName = Path.GetFileNameWithoutExtension(FilePath);
+            if (!(FileDir == null || FileDir == string.Empty))
+                _compressedPath = Path.Combine(FileDir, _fileName + ".gz");
         }
 
         public void Write() // Архивирование
